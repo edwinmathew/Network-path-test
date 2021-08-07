@@ -56,7 +56,11 @@ let csvStream = csv
         connection.query(query, [csvData], (error, response) => {
           console.log(error);
         });
-		
+		let query1 =
+          "INSERT INTO paths (destination,source,signal_time) VALUES ?";
+        connection.query(query1, [csvData], (error, response) => {
+          console.log(error);
+        });
 		get_user_iput();
       }
     });
