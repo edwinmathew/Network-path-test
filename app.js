@@ -12,7 +12,7 @@ const rl = readline.createInterface({
 //Databse connection
 
 db = config.database;
-var connection=mysql.createConnection({user:db.user,host:db.host,password:db.password,database:db.database});
+var connection=mysql.createConnection({user:db.user,host:db.host,password:db.password,database:db.database,multipleStatements: true});
 
 //To get csv file name
 get_csv_file = function(){
@@ -52,7 +52,7 @@ let csvStream = csv
 
       } else {
         let query =
-          "INSERT INTO paths (source, destination,signal_time) VALUES ?";
+          "TRUNCATE TABLE paths;INSERT INTO paths (source, destination,signal_time) VALUES ?";
         connection.query(query, [csvData], (error, response) => {
           console.log(error);
         });
@@ -71,7 +71,7 @@ getpath = function(start_node,end_node,maximum_time){
 	
   return new Promise(function(resolve, reject){
     connection.query(
-        "WITH RECURSIVE cte AS(SELECT p.destination,concat(p.source, '=>', p.destination) 	AS path,signal_time FROM paths p WHERE p.source = '"+start_node+"' UNION ALL SELECT p.destination, concat(c.path, '=>', p.destination) AS path,p.signal_time + c.signal_time AS length FROM cte c JOIN paths p ON p.source = c.destination) SELECT c.path,c.signal_time FROM cte c WHERE c.destination = '"+end_node+"' AND c.signal_time < '100' ORDER BY c.signal_time;", 
+        "WITH RECURSIVE cte AS(SELECT p.destination,concat(p.source, '=>', p.destination) 	AS path,signal_time FROM paths p WHERE p.source = '"+start_node+"' UNION ALL SELECT p.destination, concat(c.path, '=>', p.destination) AS path,p.signal_time + c.signal_time AS length FROM cte c JOIN paths p ON p.source = c.destination) SELECT c.path,c.signal_time FROM cte c WHERE c.destination = '"+end_node+"' AND c.signal_time <='"+maximum_time+"';", 
         function(err, rows){                                                
             if(rows === undefined){
                 reject(new Error("Error rows is undefined"));
@@ -88,7 +88,7 @@ getpath_reverse = function(start_node,end_node,maximum_time){
 	
   return new Promise(function(resolve, reject){
     connection.query(
-        "WITH RECURSIVE cte AS(SELECT p.destination,concat(p.destination, '=>', p.source) 	AS path,signal_time FROM paths p WHERE p.source = '"+end_node+"' UNION ALL SELECT p.destination, concat(p.destination,'=>',c.path) AS path,p.signal_time + c.signal_time AS length FROM cte c JOIN paths p ON p.source = c.destination) SELECT c.path,c.signal_time FROM cte c WHERE c.destination = '"+start_node+"' ORDER BY c.signal_time;", 
+        "WITH RECURSIVE cte AS(SELECT p.destination,concat(p.destination, '=>', p.source) 	AS path,signal_time FROM paths p WHERE p.source = '"+end_node+"' UNION ALL SELECT p.destination, concat(p.destination,'=>',c.path) AS path,p.signal_time + c.signal_time AS length FROM cte c JOIN paths p ON p.source = c.destination) SELECT c.path,c.signal_time FROM cte c WHERE c.destination = '"+start_node+"' AND c.signal_time <='"+maximum_time+"';", 
         function(err, rows){                                                
             if(rows === undefined){
                 reject(new Error("Error rows is undefined"));
