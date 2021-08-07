@@ -9,6 +9,8 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 
+//Databse connection
+
 db = config.database;
 var connection=mysql.createConnection({user:db.user,host:db.host,password:db.password,database:db.database});
 
@@ -25,6 +27,8 @@ get_csv_file = function(){
 		
 	});
 }
+
+
 
 get_csv_file();
 
@@ -47,17 +51,86 @@ let csvStream = csv
         console.error(error);
 
       } else {
-       let query =
+        let query =
           "INSERT INTO paths (source, destination,signal_time) VALUES ?";
         connection.query(query, [csvData], (error, response) => {
           console.log(error);
         });
 		
+		get_user_iput();
       }
     });
   });
 
 stream.pipe(csvStream);
+}
+
+// To get the path from one node to another
+
+getpath = function(start_node,end_node,maximum_time){
+	
+  return new Promise(function(resolve, reject){
+    connection.query(
+        "WITH RECURSIVE cte AS(SELECT p.destination,concat(p.source, '=>', p.destination) 	AS path,signal_time FROM paths p WHERE p.source = '"+start_node+"' UNION ALL SELECT p.destination, concat(c.path, '=>', p.destination) AS path,p.signal_time + c.signal_time AS length FROM cte c JOIN paths p ON p.source = c.destination) SELECT c.path,c.signal_time FROM cte c WHERE c.destination = '"+end_node+"' AND c.signal_time < '100' ORDER BY c.signal_time;", 
+        function(err, rows){                                                
+            if(rows === undefined){
+                reject(new Error("Error rows is undefined"));
+            }else{
+                resolve(rows);
+            }
+        }
+    )}
+)}
+
+// To get the reverse path from one node to another
+
+getpath_reverse = function(start_node,end_node,maximum_time){
+	
+  return new Promise(function(resolve, reject){
+    connection.query(
+        "WITH RECURSIVE cte AS(SELECT p.destination,concat(p.destination, '=>', p.source) 	AS path,signal_time FROM paths p WHERE p.source = '"+end_node+"' UNION ALL SELECT p.destination, concat(p.destination,'=>',c.path) AS path,p.signal_time + c.signal_time AS length FROM cte c JOIN paths p ON p.source = c.destination) SELECT c.path,c.signal_time FROM cte c WHERE c.destination = '"+start_node+"' ORDER BY c.signal_time;", 
+        function(err, rows){                                                
+            if(rows === undefined){
+                reject(new Error("Error rows is undefined"));
+            }else{
+                resolve(rows);
+            }
+        }
+    )}
+)}
+	
+get_user_iput = function(){
+		rl.question("", function(name1) {
+			if(name1!='QUIT'){
+					 var string = name1.split(" ");
+					 var start_node =string[0]; 
+					 var end_node =string[1]; 
+					 var maximum_time =string[2]; 
+					  getpath(start_node,end_node,maximum_time)
+							.then(function(results){
+
+								if(results.length > 0){
+									console.log(results[0].path+"=>"+results[0].signal_time);
+								}else{
+									getpath_reverse(start_node,end_node,maximum_time).then(function(results){
+										if(results.length > 0){
+												console.log(results[0].path+"=>"+results[0].signal_time);
+										}else{
+											console.log("No path found");
+										}
+									});
+								}
+							 get_user_iput();
+							})
+							.catch(function(err){
+							  console.log("Promise rejection error: "+err);
+							})
+			}else{
+				
+				console.log("\nThank you!");
+				process.exit(0);
+			}				
+				});
 }
 
 //On application termination		
