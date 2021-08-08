@@ -91,7 +91,7 @@ getpath_reverse = function(start_node,end_node,maximum_time){
 	
   return new Promise(function(resolve, reject){
     connection.query(
-        "WITH RECURSIVE cte AS(SELECT p.destination,concat(p.destination,'=>' p.source) 	AS path,signal_time,path_id FROM paths p WHERE p.source = '"+end_node+"' UNION ALL SELECT p.destination, concat(p.destination,'=>',c.path) AS path,p.signal_time + c.signal_time ,p.path_id+c.path_id FROM cte c JOIN paths p ON p.source = c.destination) SELECT c.path,c.signal_time,c.path_id FROM cte c WHERE c.destination = '"+start_node+"' AND c.signal_time <='"+maximum_time+"' ORDER BY c.path_id LIMIT 1;", 
+        "WITH RECURSIVE cte AS(SELECT p.destination,concat(p.destination,'=>',p.source) 	AS path,signal_time,path_id FROM paths p WHERE p.source = '"+end_node+"' UNION ALL SELECT p.destination, concat(p.destination,'=>',c.path) AS path,p.signal_time + c.signal_time ,p.path_id+c.path_id FROM cte c JOIN paths p ON p.source = c.destination) SELECT c.path,c.signal_time,c.path_id FROM cte c WHERE c.destination = '"+start_node+"' AND c.signal_time <='"+maximum_time+"' ORDER BY c.path_id LIMIT 1;", 
         function(err, rows){                                                
             if(rows === undefined){
                 reject(new Error("Error rows is undefined"));
