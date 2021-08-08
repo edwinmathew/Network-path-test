@@ -54,10 +54,13 @@ let csvStream = csv
         let query =
           "TRUNCATE TABLE paths;INSERT INTO paths (source, destination,signal_time) VALUES ?";
         connection.query(query, [csvData], (error, response) => {
-          console.log(error);
+			if(error){
+				 console.log(error);
+			}
+			get_user_iput();
         });
 		
-		get_user_iput();
+		
       }
     });
   });
