@@ -36,9 +36,12 @@ CREATE TABLE IF NOT EXISTS paths (path_id int NOT NULL AUTO_INCREMENT,source cha
 ```
   6. Clone this repository or download
   7. open command prompt inside the downloaded folder
-  8. Type npm install
-  9. Open config.js and enter your host and database details
-  10. To run the project type
+  8. Install dependencies type 
+  ```
+  npm install
+  ```
+  10. Open config.js and enter your host and database details
+  11. To run the project type
   ```
   node app
   ```
